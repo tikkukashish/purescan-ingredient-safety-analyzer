@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import type { AnalyzedIngredient, RiskLevel } from '../types';
-import { Search, AlertTriangle, ShieldCheck, ShieldAlert, ChevronDown, ChevronUp, CheckCircle, Info } from 'lucide-react';
+import type { AnalyzedIngredient, RiskLevel, ProductCategory } from '../types';
+import { Search, AlertTriangle, ShieldCheck, ShieldAlert, ChevronDown, ChevronUp, CheckCircle, Info, Apple, Sparkles } from 'lucide-react';
 
 interface IngredientListProps {
   ingredients: AnalyzedIngredient[];
+  category?: ProductCategory;
 }
 
-export const IngredientList: React.FC<IngredientListProps> = ({ ingredients }) => {
+export const IngredientList: React.FC<IngredientListProps> = ({ ingredients, category }) => {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<RiskLevel | 'all'>('all');
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
@@ -15,7 +16,8 @@ export const IngredientList: React.FC<IngredientListProps> = ({ ingredients }) =
     const matchesSearch =
       item.originalText.toLowerCase().includes(search.toLowerCase()) ||
       (item.matchedName && item.matchedName.toLowerCase().includes(search.toLowerCase())) ||
-      item.bodyImpact.toLowerCase().includes(search.toLowerCase());
+      item.bodyImpact.toLowerCase().includes(search.toLowerCase()) ||
+      (item.nutrition && item.nutrition.nutritionImpact.toLowerCase().includes(search.toLowerCase()));
 
     const matchesFilter = filter === 'all' || item.riskLevel === filter;
 
@@ -45,6 +47,36 @@ export const IngredientList: React.FC<IngredientListProps> = ({ ingredients }) =
     }
   };
 
+  const getNutritionPill = (nut: NonNullable<AnalyzedIngredient['nutrition']>) => {
+    switch (nut.level) {
+      case 'excellent':
+        return {
+          bg: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300',
+          label: `Whole Food (${nut.nutritionScore.toFixed(1)})`
+        };
+      case 'good':
+        return {
+          bg: 'bg-teal-500/15 border-teal-500/30 text-teal-300',
+          label: `Nutritious (${nut.nutritionScore.toFixed(1)})`
+        };
+      case 'neutral':
+        return {
+          bg: 'bg-slate-800/80 border-slate-700 text-slate-300',
+          label: `Neutral (${nut.nutritionScore.toFixed(1)})`
+        };
+      case 'poor':
+        return {
+          bg: 'bg-amber-500/15 border-amber-500/30 text-amber-300',
+          label: `Refined (${nut.nutritionScore.toFixed(1)})`
+        };
+      case 'unhealthy':
+        return {
+          bg: 'bg-rose-500/15 border-rose-500/30 text-rose-300',
+          label: `Empty Cal (${nut.nutritionScore.toFixed(1)})`
+        };
+    }
+  };
+
   return (
     <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
       {/* Header and Filter Controls */}
@@ -54,7 +86,7 @@ export const IngredientList: React.FC<IngredientListProps> = ({ ingredients }) =
             Detailed Ingredient Breakdown ({ingredients.length})
           </h3>
           <p className="text-xs text-slate-400">
-            Click on any ingredient to view biological mechanisms & regulatory notes
+            Click on any ingredient to view physiological mechanisms{category === 'food' ? ', dietary health & nutrition' : ''}
           </p>
         </div>
 
@@ -132,6 +164,7 @@ export const IngredientList: React.FC<IngredientListProps> = ({ ingredients }) =
             const badge = getRiskBadge(item.riskLevel);
             const BadgeIcon = badge.icon;
             const isExpanded = expandedIndex === idx;
+            const nutritionPill = item.nutrition ? getNutritionPill(item.nutrition) : null;
 
             return (
               <div
@@ -164,23 +197,33 @@ export const IngredientList: React.FC<IngredientListProps> = ({ ingredients }) =
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-3 shrink-0">
+                  <div className="flex items-center space-x-2 shrink-0">
+                    {/* Nutrition pill if food */}
+                    {nutritionPill && (
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border flex items-center space-x-1 ${nutritionPill.bg}`}>
+                        <Apple className="w-2.5 h-2.5 shrink-0" />
+                        <span className="hidden sm:inline">{nutritionPill.label}</span>
+                      </span>
+                    )}
+
+                    {/* Safety badge */}
                     <span className={`px-2.5 py-1 rounded-full text-[10px] font-semibold border flex items-center space-x-1 ${badge.bg}`}>
-                      <BadgeIcon className="w-3 h-3" />
+                      <BadgeIcon className="w-3 h-3 shrink-0" />
                       <span className="hidden sm:inline">{badge.label}</span>
                     </span>
 
                     {isExpanded ? (
-                      <ChevronUp className="w-4 h-4 text-slate-500" />
+                      <ChevronUp className="w-4 h-4 text-slate-500 shrink-0" />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-slate-500" />
+                      <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
                     )}
                   </div>
                 </div>
 
-                {/* Expanded Biological Detail Drawer */}
+                {/* Expanded Biological & Nutrition Detail Drawer */}
                 {isExpanded && (
                   <div className="px-4 pb-4 pt-1 bg-slate-900/40 border-t border-slate-800/60 space-y-3 text-xs">
+                    {/* Body physiological safety impact */}
                     <div>
                       <h5 className="font-semibold text-slate-300 text-[11px] uppercase tracking-wider mb-1 flex items-center space-x-1.5">
                         <Info className="w-3.5 h-3.5 text-emerald-400" />
@@ -190,6 +233,37 @@ export const IngredientList: React.FC<IngredientListProps> = ({ ingredients }) =
                         {item.bodyImpact}
                       </p>
                     </div>
+
+                    {/* Nutritional Value section for food items */}
+                    {item.nutrition && (
+                      <div className="p-3 bg-emerald-950/20 border border-emerald-500/20 rounded-xl space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h5 className="font-semibold text-emerald-300 text-[11px] uppercase tracking-wider flex items-center space-x-1.5">
+                            <Apple className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Nutritional Health Value</span>
+                          </h5>
+                          <span className="text-[10px] font-bold text-emerald-400 px-2 py-0.5 bg-emerald-500/10 rounded-md border border-emerald-500/20">
+                            Score: {item.nutrition.nutritionScore.toFixed(1)} / 10 ({item.nutrition.level})
+                          </span>
+                        </div>
+                        <p className="text-slate-300 leading-relaxed text-xs">
+                          {item.nutrition.nutritionImpact}
+                        </p>
+                        {item.nutrition.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {item.nutrition.tags.map((ntag) => (
+                              <span
+                                key={ntag}
+                                className="px-2 py-0.5 bg-slate-950 text-slate-300 rounded text-[10px] border border-slate-800 flex items-center space-x-1"
+                              >
+                                <Sparkles className="w-2.5 h-2.5 text-emerald-400" />
+                                <span>{ntag}</span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Tags */}
                     {item.tags.length > 0 && (

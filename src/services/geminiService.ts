@@ -35,10 +35,14 @@ export async function analyzeWithGemini(
     throw new Error('No Gemini API Key provided. Please add one in settings or use the local engine.');
   }
 
-  const prompt = `You are an expert toxicologist, biochemist, and consumer safety evaluator.
+  const prompt = `You are an expert toxicologist, biochemist, and registered dietitian evaluating consumer products.
 Analyze the following product ingredients for physiological health impact on the human body.
 The user specifies that the safety rating must be strictly based on the biological effect the ingredients have on the human body for its intended context.
 For example, harsh sulfates in shampoo destroy the scalp barrier and follicle integrity (hazard rating), endocrine disruptors in skincare absorb into the bloodstream, and ultra-processed food dyes or trans fats cause gut/liver/metabolic toxicity.
+
+IMPORTANT: For FOOD category products, you MUST evaluate BOTH:
+1. "overallScore" (1.0 to 10.0): Additive / Toxicity Safety (1 = toxic/banned additives/trans fats, 10 = completely safe non-toxic).
+2. "nutritionalSummary": How healthy/nutritious it is to consume (1 = empty calories/refined sugar/maida/processed oils, 10 = whole-food nutrient dense superfood with high fiber/vitamins/minerals).
 
 Product Category: ${category}
 Ingredients List:
@@ -47,16 +51,29 @@ ${text}
 Respond ONLY with a valid JSON object strictly matching this schema, without any markdown formatting or backticks:
 {
   "category": "${category}",
-  "overallScore": number (1.0 to 10.0, where 1 is non-consumable/toxic/destructive to body, and 10 is completely pure, biocompatible, and nourishing),
-  "ratingLabel": string (e.g. "Hazardous / High Toxicity Risk", "Poor Safety / High Health Concern", "Moderate / Mixed Safety", "Good / Body-Friendly", "Exceptional / Pure & Nourishing"),
-  "verdictDescription": string (concise explanation of safety and biological effects on the body),
+  "overallScore": number (1.0 to 10.0),
+  "ratingLabel": string,
+  "verdictDescription": string,
   "totalIngredients": number,
   "harmfulCount": number,
   "moderateCount": number,
   "safeCount": number,
-  "bodyImpactFlags": string[] (subset of: ["Endocrine Disruptor", "Scalp & Skin Barrier Irritant", "Carcinogenic / Mutagenic Risk", "Gut Microbiome Disruptor", "Organ Toxicity Risk", "Microplastic & Accumulation", "Synthetic Allergen", "Bio-Compatible & Nourishing", "Metabolic Stressor", "Cellular Protective"]),
-  "criticalWarnings": string[] (up to 4 bullet warnings of the most harmful ingredients and their biological effects),
-  "recommendations": string[] (cleaner natural alternatives to look for),
+  "bodyImpactFlags": string[],
+  "criticalWarnings": string[],
+  "recommendations": string[],
+  ${category === 'food' ? `"nutritionalSummary": {
+    "score": number (1.0 to 10.0, evaluating nutritional density and healthiness),
+    "label": string (e.g. "Superb Whole-Food Nutrition", "Nutrient-Dense & Wholesome", "Moderate Nutritional Value", "Nutritionally Depleted / Processed", "Ultra-Processed Junk / Empty Calories"),
+    "description": string (explanation of whether it provides real nutrients vs empty calories),
+    "excellentCount": number,
+    "goodCount": number,
+    "neutralCount": number,
+    "poorCount": number,
+    "unhealthyCount": number,
+    "topNutritionTags": string[],
+    "topConcernTags": string[],
+    "healthTips": string[]
+  },` : ''}
   "ingredients": [
     {
       "originalText": string,
@@ -64,10 +81,16 @@ Respond ONLY with a valid JSON object strictly matching this schema, without any
       "category": "${category}",
       "riskLevel": "safe" | "moderate" | "harmful",
       "hazardScore": number,
-      "bodyImpact": string (detailed sentence explaining exact effect on body/cells/organs),
+      "bodyImpact": string,
       "tags": string[],
       "cleanAlternatives": string[],
-      "confidence": number
+      "confidence": number,
+      ${category === 'food' ? `"nutrition": {
+        "nutritionScore": number (1.0 to 10.0),
+        "level": "excellent" | "good" | "neutral" | "poor" | "unhealthy",
+        "tags": string[],
+        "nutritionImpact": string
+      }` : ''}
     }
   ]
 }`;

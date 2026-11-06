@@ -6,6 +6,7 @@ import { CameraCapture } from './components/CameraCapture';
 import { ImageUploader } from './components/ImageUploader';
 import { IngredientEditor } from './components/IngredientEditor';
 import { ScoreGauge } from './components/ScoreGauge';
+import { NutritionalHealthCard } from './components/NutritionalHealthCard';
 import { BodyImpactSummary } from './components/BodyImpactSummary';
 import { IngredientList } from './components/IngredientList';
 import { ExportModal } from './components/ExportModal';
@@ -248,11 +249,16 @@ export const App: React.FC = () => {
             {/* Score Radial Gauge */}
             <ScoreGauge summary={summary} />
 
+            {/* Food Nutritional Health & Wholesomeness Analysis */}
+            {summary.category === 'food' && summary.nutritionalSummary && (
+              <NutritionalHealthCard summary={summary.nutritionalSummary} />
+            )}
+
             {/* Biological Impact Dimensions & Warnings */}
             <BodyImpactSummary summary={summary} />
 
             {/* Detailed Ingredient-by-Ingredient Breakdown */}
-            <IngredientList ingredients={summary.ingredients} />
+            <IngredientList ingredients={summary.ingredients} category={summary.category} />
           </div>
         )}
       </main>

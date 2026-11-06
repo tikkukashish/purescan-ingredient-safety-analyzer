@@ -14,6 +14,35 @@ export type BodyImpactTag =
   | 'Metabolic Stressor'
   | 'Cellular Protective';
 
+export type NutritionLevel = 'excellent' | 'good' | 'neutral' | 'poor' | 'unhealthy';
+
+export type NutritionTag =
+  | 'High Fiber'
+  | 'Rich in Antioxidants'
+  | 'Heart Healthy Fats'
+  | 'Complete Protein'
+  | 'Vitamin & Mineral Dense'
+  | 'Anti-Inflammatory'
+  | 'Prebiotic / Probiotic'
+  | 'Whole Food Source'
+  | 'Empty Calories'
+  | 'Refined / Processed'
+  | 'High Glycemic'
+  | 'Pro-Inflammatory'
+  | 'Nutrient Depleting'
+  | 'Excess Sodium'
+  | 'Artificial Additive'
+  | 'Low Nutrient Density';
+
+export interface NutritionalProfile {
+  /** 1 = nutritionally void / harmful, 10 = superb whole-food nutrition */
+  nutritionScore: number;
+  level: NutritionLevel;
+  tags: NutritionTag[];
+  /** Short explanation of nutritional value or lack thereof */
+  nutritionImpact: string;
+}
+
 export interface DatabaseIngredient {
   name: string;
   aliases: string[];
@@ -25,6 +54,8 @@ export interface DatabaseIngredient {
   tags: BodyImpactTag[];
   cleanAlternatives?: string[];
   regulatoryNotes?: string;
+  /** Nutritional profile for food-category ingredients */
+  nutrition?: NutritionalProfile;
 }
 
 export interface AnalyzedIngredient {
@@ -38,6 +69,23 @@ export interface AnalyzedIngredient {
   cleanAlternatives?: string[];
   regulatoryNotes?: string;
   confidence: number;
+  /** Nutritional profile (food category only) */
+  nutrition?: NutritionalProfile;
+}
+
+export interface NutritionalSummary {
+  /** 1 to 10 nutritional health score */
+  score: number;
+  label: string;
+  description: string;
+  excellentCount: number;
+  goodCount: number;
+  neutralCount: number;
+  poorCount: number;
+  unhealthyCount: number;
+  topNutritionTags: NutritionTag[];
+  topConcernTags: NutritionTag[];
+  healthTips: string[];
 }
 
 export interface AnalysisSummary {
@@ -55,6 +103,8 @@ export interface AnalysisSummary {
   ingredients: AnalyzedIngredient[];
   analyzedWith: 'local-engine' | 'gemini-ai';
   timestamp: string;
+  /** Nutritional health summary (food category only) */
+  nutritionalSummary?: NutritionalSummary;
 }
 
 export interface PresetSample {

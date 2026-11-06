@@ -14,16 +14,29 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, summa
   if (!isOpen) return null;
 
   const generateMarkdown = () => {
-    return `# PureScan Ingredient Safety Report
+    const nutritionSection = summary.nutritionalSummary ? `
+---
+
+## Nutritional Health Evaluation (Food)
+- **Nutrition & Wholesomeness Score:** ${summary.nutritionalSummary.score.toFixed(1)} / 10 (${summary.nutritionalSummary.label})
+- **Summary:** ${summary.nutritionalSummary.description}
+- **Quality Distribution:** ${summary.nutritionalSummary.excellentCount} Whole Food, ${summary.nutritionalSummary.goodCount} Nutritious, ${summary.nutritionalSummary.neutralCount} Neutral, ${summary.nutritionalSummary.poorCount} Refined, ${summary.nutritionalSummary.unhealthyCount} Empty Calories
+- **Nourishing Highlights:** ${summary.nutritionalSummary.topNutritionTags.join(', ') || 'None noted'}
+- **Nutritional Concerns:** ${summary.nutritionalSummary.topConcernTags.join(', ') || 'None noted'}
+- **Dietitian Advice:**
+${summary.nutritionalSummary.healthTips.map(tip => `  - ${tip}`).join('\n')}
+` : '';
+
+    return `# PureScan Ingredient Safety & Health Report
 **Product Category:** ${summary.category.toUpperCase()}
-**Overall Safety Rating:** ${summary.overallScore.toFixed(1)} / 10 (${summary.ratingLabel})
+**Additive & Toxicity Safety Rating:** ${summary.overallScore.toFixed(1)} / 10 (${summary.ratingLabel})
 **Verdict:** ${summary.verdictDescription}
 **Analysis Engine:** ${summary.analyzedWith}
 **Date:** ${new Date(summary.timestamp).toLocaleString()}
-
+${nutritionSection}
 ---
 
-## Breakdown
+## Toxicity & Hazard Breakdown
 - Total Ingredients: ${summary.totalIngredients}
 - Harmful / Toxic: ${summary.harmfulCount}
 - Moderate Concern: ${summary.moderateCount}
@@ -39,7 +52,10 @@ ${summary.bodyImpactFlags.map(t => `- ${t}`).join('\n')}
 ${summary.recommendations.map(r => `- ${r}`).join('\n')}
 
 ## Full Ingredient Details
-${summary.ingredients.map((ing, i) => `${i + 1}. **${ing.matchedName || ing.originalText}** [${ing.riskLevel.toUpperCase()}]\n   - Body Effect: ${ing.bodyImpact}\n   - Tags: ${ing.tags.join(', ')}`).join('\n\n')}
+${summary.ingredients.map((ing, i) => {
+  const nutInfo = ing.nutrition ? `\n   - Nutritional Health: ${ing.nutrition.level.toUpperCase()} (${ing.nutrition.nutritionScore.toFixed(1)}/10) - ${ing.nutrition.nutritionImpact}` : '';
+  return `${i + 1}. **${ing.matchedName || ing.originalText}** [${ing.riskLevel.toUpperCase()}]\n   - Body Effect: ${ing.bodyImpact}${nutInfo}\n   - Tags: ${ing.tags.join(', ')}`;
+}).join('\n\n')}
 `;
   };
 
